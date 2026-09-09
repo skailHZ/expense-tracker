@@ -42,3 +42,6 @@ CREATE TABLE expenses (
 );
 CREATE INDEX idx_expenses_project_id ON expenses(project_id);
 CREATE INDEX idx_expenses_employee_id ON expenses(employee_id);
+
+-- changeset admin:5
+INSERT INTO users (username, password, role) VALUES ('ceo_boss', 'secret123', 'ROLE_ADMIN');

@@ -1,5 +1,6 @@
 package com.example.expense_tracker.mapper;
 
+import com.example.expense_tracker.dto.ProjectCreateDto;
 import com.example.expense_tracker.dto.ProjectDto;
 import com.example.expense_tracker.entity.Project;
 import com.example.expense_tracker.entity.User;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T07:27:07+0300",
+    date = "2026-09-09T02:06:16+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.12 (Eclipse Adoptium)"
 )
 @Component
@@ -36,6 +37,20 @@ public class ProjectMapperImpl implements ProjectMapper {
         ProjectDto projectDto = new ProjectDto( id, name, description, adminId, createdAt );
 
         return projectDto;
+    }
+
+    @Override
+    public Project toEntity(ProjectCreateDto dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        Project project = new Project();
+
+        project.setName( dto.name() );
+        project.setDescription( dto.description() );
+
+        return project;
     }
 
     private Long projectAdminId(Project project) {

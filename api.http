@@ -1,0 +1,32 @@
+### ТЕСТ 1: Проверка валидации (Ошибка 400 - пустое имя проекта)
+POST http://localhost:8080/api/v1/projects
+Content-Type: application/json
+
+{
+  "name": "",
+  "description": "Тестовый проект",
+  "adminId": 1
+}
+
+### ТЕСТ 2: Проверка несуществующего юзера (Ошибка 404)
+POST http://localhost:8080/api/v1/projects
+Content-Type: application/json
+
+{
+  "name": "Project Alpha",
+  "description": "Тестовый проект",
+  "adminId": 999
+}
+
+### ТЕСТ 3: Успешное создание проекта (Статус 201 Created)
+POST http://localhost:8080/api/v1/projects
+Content-Type: application/json
+
+{
+  "name": "Corporate ERP System",
+  "description": "Разработка внутренней ERP",
+  "adminId": 1
+}
+
+### ТЕСТ 4: Проверка GET запроса (Чтение созданного проекта)
+GET http://localhost:8080/api/v1/projects/1
