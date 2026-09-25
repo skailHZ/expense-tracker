@@ -1,32 +1,38 @@
-### ТЕСТ 1: Проверка валидации (Ошибка 400 - пустое имя проекта)
-POST http://localhost:8080/api/v1/projects
+### 1. Регистрация нового админа (Пароль будет захэширован)
+POST http://localhost:8080/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "name": "",
-  "description": "Тестовый проект",
-  "adminId": 1
+  "username": "tech_lead",
+  "password": "strongPassword123",
+  "role": "ROLE_ADMIN"
 }
 
-### ТЕСТ 2: Проверка несуществующего юзера (Ошибка 404)
-POST http://localhost:8080/api/v1/projects
+> {%
+    // Сохраняем токен в переменную окружения IDE для следующих запросов
+    client.global.set("auth_token", response.body.token);
+%}
+
+### 2. Логин
+POST http://localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "name": "Project Alpha",
-  "description": "Тестовый проект",
-  "adminId": 999
+  "username": "tech_lead",
+  "password": "strongPassword123"
 }
 
-### ТЕСТ 3: Успешное создание проекта (Статус 201 Created)
+> {%
+    client.global.set("auth_token", response.body.token);
+%}
+
+### 3. Создание проекта с использованием JWT
 POST http://localhost:8080/api/v1/projects
 Content-Type: application/json
+Authorization: Bearer {{auth_token}}
 
 {
-  "name": "Corporate ERP System",
-  "description": "Разработка внутренней ERP",
-  "adminId": 1
+  "name": "Secure JWT Project",
+  "description": "Проект защищен секьюрити",
+  "adminId": 2
 }
-
-### ТЕСТ 4: Проверка GET запроса (Чтение созданного проекта)
-GET http://localhost:8080/api/v1/projects/1

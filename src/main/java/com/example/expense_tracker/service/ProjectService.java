@@ -27,13 +27,14 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project with id " + id + " not found"));
     }
 
-    @Transactional // Здесь readOnly = false, так как мы меняем состояние БД
-    public ProjectDto createProject(ProjectCreateDto dto) {
-        User admin = userRepository.findById(dto.adminId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + dto.adminId() + " not found"));
+    @Transactional
+    public ProjectDto createProject(ProjectCreateDto dto, String username) {
+        // Ищем пользователя по логину, который извлекли из токена
+        User admin = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
 
         Project project = projectMapper.toEntity(dto);
-        project.setAdmin(admin); // Устанавливаем связь
+        project.setAdmin(admin); // Безопасная привязка
 
         Project savedProject = projectRepository.save(project);
         return projectMapper.toDto(savedProject);

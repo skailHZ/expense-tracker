@@ -23,9 +23,12 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectCreateDto dto) {
-        ProjectDto createdProject = projectService.createProject(dto);
-        // Статус 201 Created — стандарт для POST запросов
+    public ResponseEntity<ProjectDto> createProject(
+            @Valid @RequestBody ProjectCreateDto dto,
+            java.security.Principal principal // Spring сам инжектит сюда данные из JWT
+    ) {
+        // principal.getName() вернет username пользователя, чей токен был прислан
+        ProjectDto createdProject = projectService.createProject(dto, principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.expense_tracker.mapper;
 
+import com.example.expense_tracker.dto.TaskCreateDto;
 import com.example.expense_tracker.dto.TaskDto;
 import com.example.expense_tracker.entity.Project;
 import com.example.expense_tracker.entity.Task;
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-09-09T02:06:16+0300",
+    date = "2026-09-25T14:03:37+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.12 (Eclipse Adoptium)"
 )
 @Component
@@ -40,6 +41,20 @@ public class TaskMapperImpl implements TaskMapper {
         TaskDto taskDto = new TaskDto( id, title, status, projectId, employeeId, createdAt );
 
         return taskDto;
+    }
+
+    @Override
+    public Task toEntity(TaskCreateDto dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        Task task = new Task();
+
+        task.setTitle( dto.title() );
+        task.setStatus( dto.status() );
+
+        return task;
     }
 
     private Long taskProjectId(Task task) {
