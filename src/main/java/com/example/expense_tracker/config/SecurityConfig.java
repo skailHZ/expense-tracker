@@ -31,8 +31,9 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // Отключаем CSRF, т.к. токены защищают нас сами
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll() // Доступ без токена
-                        .anyRequest().authenticated() // Все остальные эндпоинты требуют токен
+                        .requestMatchers("/api/v1/auth/**").permitAll() // Доступ к регистрации и логину
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Доступ к Swagger UI
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Никаких сессий в памяти

@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:15
@@ -10,3 +9,20 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: tracker-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Важно: стучимся к базе по имени контейнера "postgres"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tracker_db
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  pgdata:
