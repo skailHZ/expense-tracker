@@ -1,5 +1,6 @@
 package com.example.expense_tracker.mapper;
 
+import com.example.expense_tracker.dto.ExpenseCreateDto;
 import com.example.expense_tracker.dto.ExpenseDto;
 import com.example.expense_tracker.entity.Expense;
 import com.example.expense_tracker.entity.Project;
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-09-25T23:24:44+0300",
+    date = "2026-10-01T21:56:42+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.12 (Eclipse Adoptium)"
 )
 @Component
@@ -40,6 +41,20 @@ public class ExpenseMapperImpl implements ExpenseMapper {
         ExpenseDto expenseDto = new ExpenseDto( id, amount, description, projectId, employeeId, createdAt );
 
         return expenseDto;
+    }
+
+    @Override
+    public Expense toEntity(ExpenseCreateDto dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        Expense expense = new Expense();
+
+        expense.setAmount( dto.amount() );
+        expense.setDescription( dto.description() );
+
+        return expense;
     }
 
     private Long expenseProjectId(Expense expense) {

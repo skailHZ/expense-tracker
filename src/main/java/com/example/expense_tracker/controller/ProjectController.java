@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/projects")
@@ -23,6 +24,7 @@ public class ProjectController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')") // Доступ строго для администраторов
     public ResponseEntity<ProjectDto> createProject(
             @Valid @RequestBody ProjectCreateDto dto,
             java.security.Principal principal // Spring сам инжектит сюда данные из JWT

@@ -57,11 +57,12 @@ Once the application is running, the interactive API documentation is automatica
 🔗 **[Swagger UI: http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)**
 
 ### Quick Start Guide for Testing via Swagger:
-1. Navigate to the `auth-controller` -> `POST /api/v1/auth/register`.
-2. Register a new user (e.g., with `ROLE_ADMIN`).
-3. Copy the returned JWT token.
-4. Click the **"Authorize"** button at the top of the Swagger page and paste the token.
-5. You now have access to all protected endpoints (e.g., creating projects and tasks).
+1. Navigate to the `auth-controller` section.
+2. If you are a new user, use `POST /api/v1/auth/register` to create an account (e.g., set role to `ROLE_ADMIN`).
+3. If you already have an account, use `POST /api/v1/auth/login` to authenticate.
+4. Copy the JWT token from the response body (`"token": "eyJhb..."`).
+5. Click the green **"Authorize"** button at the top of the Swagger page and paste the token.
+6. You now have access to protected endpoints (Note: creating projects requires `ROLE_ADMIN`).
 
 ## 🧪 Testing
 Unit tests are written using JUnit 5 and Mockito, isolating the business logic from the Spring Context.

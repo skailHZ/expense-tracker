@@ -16,7 +16,7 @@ services:
     build: .
     container_name: tracker-backend
     ports:
-      - "8080:8080"
+      - "9090:8080"
     environment:
       # Важно: стучимся к базе по имени контейнера "postgres"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tracker_db
