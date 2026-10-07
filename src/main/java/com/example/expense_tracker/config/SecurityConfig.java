@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll() // Доступ к регистрации и логину
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Доступ к Swagger UI
+                        .requestMatchers("/actuator/health/**").permitAll() // Проверка живости для Docker/оркестратора
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess

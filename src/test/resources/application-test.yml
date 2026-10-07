@@ -5,8 +5,13 @@ spring:
     # Заглушки нужны только потому, что в основном application.yml стоят плейсхолдеры без значений.
     username: test
     password: test
+
   jpa:
     show-sql: false
+    properties:
+      hibernate:
+        # Счетчики Hibernate нужны тесту, который проверяет, что число SQL-запросов не растет с размером страницы
+        generate_statistics: true
 
 application:
   security:

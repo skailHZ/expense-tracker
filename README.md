@@ -20,15 +20,15 @@ An Enterprise-level B2B REST API service designed for managing corporate project
 * **Security:** Spring Security, Stateless JWT (JSON Web Tokens)
 * **Mapping:** MapStruct, Lombok
 * **Validation:** Hibernate Validator
-* **Testing:** JUnit 5, Mockito
+* **Testing:** JUnit 5, Mockito, MockMvc, Testcontainers (real PostgreSQL), GitHub Actions CI
 * **Documentation:** OpenAPI 3.0 (Swagger UI)
-* **DevOps:** Docker, Docker Compose (Multi-stage build)
+* **DevOps:** Docker (multi-stage, non-root), Docker Compose with healthchecks, Spring Boot Actuator
 
 ## 🏗️ Architecture & Best Practices Implemented
 
 * **Layered Architecture:** Strict separation of concerns (Controller -> Service -> Repository).
 * **DTO Pattern:** Entities are never exposed to the client. MapStruct is used for fast, compile-time object mapping.
-* **N+1 Problem Solved:** Configured `@EntityGraph` in JPA repositories to fetch lazy associations efficiently.
+* **No N+1 queries:** list endpoints map entities to DTOs that need only the IDs of lazy associations (Hibernate returns them from proxies without extra queries). `QueryCountIntegrationTest` fails if the number of SQL statements starts to depend on the page size.
 * **Robust Security:** Custom `OncePerRequestFilter` for JWT validation. Role-based access (`@PreAuthorize`) is combined with object-level checks: a project is accessible only to its admin and to members the admin added (`ProjectAccessService`), which prevents broken object level authorization (BOLA).
 * **Global Exception Handling:** Custom `@RestControllerAdvice` maps exceptions to proper HTTP statuses (400, 401, 403, 404, 405, 409) and returns a standardized error body.
 * **Pagination & Sorting:** Built-in Spring Data `Pageable` implementation for large datasets.
@@ -89,6 +89,38 @@ Once the application is running, the interactive API documentation is automatica
 4. Copy the JWT token from the response body (`"token": "eyJhb..."`).
 5. Click the green **"Authorize"** button at the top of the Swagger page and paste the token.
 6. You now have access to protected endpoints (Note: creating projects and adding members requires `ROLE_ADMIN`; employees see only projects they were added to).
+
+## 🔌 API Overview
+
+All paths are prefixed with `/api/v1`. "Members" means the project admin plus employees added by the admin.
+
+| Method & path | Who can call it |
+|---|---|
+| `POST /auth/register` | anyone (always creates `ROLE_EMPLOYEE`) |
+| `POST /auth/login` | anyone |
+| `POST /projects` | any `ROLE_ADMIN` (becomes the project admin) |
+| `GET /projects/{id}` | project members |
+| `POST /projects/{id}/members` | project admin |
+| `GET`, `POST /projects/{id}/tasks` | project members |
+| `GET /projects/{id}/expenses?status=` | project members |
+| `POST /projects/{id}/expenses` (`Idempotency-Key`) | project members |
+| `POST /projects/{id}/expenses/{expenseId}/status` | project admin: approve, reject, pay; author: cancel |
+| `GET /projects/{id}/expenses/{expenseId}/history` | project members |
+| `GET /projects/{id}/expenses/total` | project members |
+| `GET /projects/{id}/expenses/analytics/by-status` | project members |
+| `GET /projects/{id}/expenses/analytics/by-employee` | project admin |
+
+`GET /actuator/health` (outside `/api/v1`) is public and used by the Docker healthcheck.
+
+## ⚙️ Configuration
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DB_USER`, `DB_PASSWORD` | yes | PostgreSQL credentials |
+| `JWT_SECRET` | yes | Base64 signing key, at least 256 bits (`openssl rand -base64 48`); the app refuses to start with a weak key |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | no | first admin, created on startup if it does not exist |
+| `JWT_EXPIRATION` | no | token lifetime in ms (default 24 h) |
+| `JPA_SHOW_SQL` | no | `true` prints SQL to the log (default `false`) |
 
 ## 🧪 Testing
 The project has two levels of tests:

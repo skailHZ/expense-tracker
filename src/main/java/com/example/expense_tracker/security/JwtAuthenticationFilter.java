@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -64,7 +66,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             // Если токен протух или подделан, мы просто игнорируем его.
-            // Запрос останется анонимным и будет заблокирован на следующем этапе SecurityFilterChain
+            // Запрос останется анонимным и будет заблокирован на следующем этапе SecurityFilterChain.
+            // Причину пишем в DEBUG (не WARN, чтобы мусорные токены не засоряли логи), но она не теряется.
+            log.debug("JWT rejected: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);

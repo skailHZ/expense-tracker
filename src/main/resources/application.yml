@@ -8,7 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate # Мы запрещаем Hibernate самому создавать таблицы (это сделает Liquibase)
-    show-sql: true       # Будем видеть SQL-запросы в консоли
+    show-sql: ${JPA_SHOW_SQL:false} # SQL в логах только по запросу: JPA_SHOW_SQL=true (в проде шумно и может светить данные)
     properties:
       hibernate:
         format_sql: true # Запросы будут выводиться красиво, с переносами строк
@@ -25,3 +25,12 @@ application:
   bootstrap-admin:
     username: ${ADMIN_USERNAME:}
     password: ${ADMIN_PASSWORD:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health   # наружу публикуем только health, остальные actuator-эндпоинты закрыты
+  endpoint:
+    health:
+      show-details: never

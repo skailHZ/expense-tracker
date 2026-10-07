@@ -1,15 +1,10 @@
 package com.example.expense_tracker.integration;
 
-import com.example.expense_tracker.entity.User;
-import com.example.expense_tracker.entity.enums.Role;
 import com.example.expense_tracker.repository.ExpenseRepository;
-import com.example.expense_tracker.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -34,18 +29,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Жизненный цикл расхода, идемпотентное создание, валюты и аналитика на настоящем PostgreSQL.
  * Параллельные сценарии проверяют именно то, что нельзя проверить моками: гонки на уровне БД.
  */
-class ExpenseWorkflowIntegrationTest extends AbstractIntegrationTest {
+class ExpenseWorkflowIntegrationTest extends ApiTestSupport {
 
-    private static final String PASSWORD = "secret123";
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private UserRepository userRepository;
     @Autowired
     private ExpenseRepository expenseRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+
 
     // ---------- жизненный цикл ----------
 
@@ -453,13 +441,6 @@ class ExpenseWorkflowIntegrationTest extends AbstractIntegrationTest {
                 .content(body));
     }
 
-    private ResultActions addMember(String adminToken, long projectId, String username) throws Exception {
-        return mockMvc.perform(post("/api/v1/projects/" + projectId + "/members")
-                .header("Authorization", bearer(adminToken))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"" + username + "\"}"));
-    }
-
     private long idOf(MvcResult result) throws Exception {
         return ((Number) JsonPath.read(result.getResponse().getContentAsString(), "$.id")).longValue();
     }
@@ -470,37 +451,6 @@ class ExpenseWorkflowIntegrationTest extends AbstractIntegrationTest {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private String register(String username) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"" + username + "\",\"password\":\"" + PASSWORD + "\"}"))
-                .andExpect(status().isOk()).andReturn();
-        return JsonPath.read(result.getResponse().getContentAsString(), "$.token");
-    }
-
-    // Публичного способа создать админа нет (так и задумано), поэтому в тесте сохраняем его напрямую в БД
-    private String createAdmin(String username) throws Exception {
-        User admin = new User();
-        admin.setUsername(username);
-        admin.setPassword(passwordEncoder.encode(PASSWORD));
-        admin.setRole(Role.ROLE_ADMIN);
-        userRepository.save(admin);
-
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"" + username + "\",\"password\":\"" + PASSWORD + "\"}"))
-                .andExpect(status().isOk()).andReturn();
-        return JsonPath.read(result.getResponse().getContentAsString(), "$.token");
-    }
-
-    private String uniqueName(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().substring(0, 8);
-    }
-
-    private String bearer(String token) {
-        return "Bearer " + token;
     }
 
     // Запускает задачи одновременно (общий старт по защелке), чтобы гарантированно столкнуть их в БД

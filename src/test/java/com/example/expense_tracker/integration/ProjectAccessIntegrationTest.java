@@ -1,14 +1,7 @@
 package com.example.expense_tracker.integration;
 
-import com.example.expense_tracker.entity.User;
-import com.example.expense_tracker.entity.enums.Role;
-import com.example.expense_tracker.repository.UserRepository;
-import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.UUID;
@@ -22,16 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Сквозные проверки авторизации: HTTP -> JWT-фильтр -> Spring Security -> сервисы -> PostgreSQL.
  * Юнит-тесты с моками не могут доказать, что реальный запрос получит именно 401/403, а не 500.
  */
-class ProjectAccessIntegrationTest extends AbstractIntegrationTest {
-
-    private static final String PASSWORD = "secret123";
-
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+class ProjectAccessIntegrationTest extends ApiTestSupport {
 
     // ---------- аутентификация ----------
 
@@ -86,6 +70,14 @@ class ProjectAccessIntegrationTest extends AbstractIntegrationTest {
         String adminToken = login("it-admin", "it-admin-pass");
 
         createProject(adminToken, "Bootstrap project").andExpect(status().isCreated());
+    }
+
+    @Test
+    void healthEndpoint_IsPublic_ButOtherActuatorEndpointsAreNot() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"));
+        mockMvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
     }
 
     // ---------- доступ к объектам (BOLA) ----------
@@ -209,45 +201,8 @@ class ProjectAccessIntegrationTest extends AbstractIntegrationTest {
 
     // ---------- помощники ----------
 
-    private String uniqueName(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().substring(0, 8);
-    }
-
     private String credentials(String username) {
         return "{\"username\":\"" + username + "\",\"password\":\"" + PASSWORD + "\"}";
-    }
-
-    private String bearer(String token) {
-        return "Bearer " + token;
-    }
-
-    private String tokenFrom(ResultActions result) throws Exception {
-        return JsonPath.read(result.andReturn().getResponse().getContentAsString(), "$.token");
-    }
-
-    private String register(String username) throws Exception {
-        return tokenFrom(mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(credentials(username)))
-                .andExpect(status().isOk()));
-    }
-
-    private String login(String username, String password) throws Exception {
-        return tokenFrom(mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}"))
-                .andExpect(status().isOk()));
-    }
-
-    // Публичного способа создать админа нет (так и задумано), поэтому в тесте сохраняем его напрямую в БД
-    private String newAdminToken() throws Exception {
-        String username = uniqueName("admin");
-        User admin = new User();
-        admin.setUsername(username);
-        admin.setPassword(passwordEncoder.encode(PASSWORD));
-        admin.setRole(Role.ROLE_ADMIN);
-        userRepository.save(admin);
-        return login(username, PASSWORD);
     }
 
     private ResultActions createProject(String token, String name) throws Exception {
@@ -255,20 +210,6 @@ class ProjectAccessIntegrationTest extends AbstractIntegrationTest {
                 .header("Authorization", bearer(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"" + name + "\",\"description\":\"d\"}"));
-    }
-
-    private long createProjectId(String adminToken) throws Exception {
-        String body = createProject(adminToken, "Project " + UUID.randomUUID())
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        return ((Number) JsonPath.read(body, "$.id")).longValue();
-    }
-
-    private ResultActions addMember(String token, long projectId, String username) throws Exception {
-        return mockMvc.perform(post("/api/v1/projects/" + projectId + "/members")
-                .header("Authorization", bearer(token))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"" + username + "\"}"));
     }
 
     private ResultActions addExpense(String token, long projectId, String amount) throws Exception {

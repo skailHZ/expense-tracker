@@ -20,15 +20,15 @@
 * **Безопасность:** Spring Security, Stateless JWT (JSON Web Tokens)
 * **Маппинг:** MapStruct, Lombok
 * **Валидация:** Hibernate Validator
-* **Тестирование:** JUnit 5, Mockito
+* **Тестирование:** JUnit 5, Mockito, MockMvc, Testcontainers (настоящий PostgreSQL), GitHub Actions CI
 * **Документация:** OpenAPI 3.0 (Swagger UI)
-* **DevOps:** Docker, Docker Compose (Multi-stage сборка)
+* **DevOps:** Docker (multi-stage, запуск не от root), Docker Compose с healthcheck, Spring Boot Actuator
 
 ## 🏗️ Архитектура и внедренные Best Practices
 
 * **Слоистая архитектура (Layered Architecture):** Строгое разделение ответственности (Controller -> Service -> Repository).
 * **Паттерн DTO:** Сущности БД (Entities) изолированы от клиента. Использован MapStruct для быстрой кодогенерации мапперов на этапе компиляции.
-* **Решение проблемы N+1:** Использование `@EntityGraph` в JPA репозиториях для оптимизированной жадной загрузки связей.
+* **Без N+1 запросов:** списки маппятся в DTO, которым нужны только id ленивых связей (Hibernate отдает их из прокси без дополнительных запросов). `QueryCountIntegrationTest` падает, если число SQL-запросов начинает зависеть от размера страницы.
 * **Безопасность:** Кастомный `OncePerRequestFilter` для валидации JWT. Проверка ролей (`@PreAuthorize`) дополнена проверкой доступа к объекту: проект доступен только своему админу и добавленным им участникам (`ProjectAccessService`), что предотвращает уязвимости BOLA (Broken Object Level Authorization).
 * **Глобальный перехват ошибок:** `@RestControllerAdvice` сопоставляет исключения с корректными HTTP-статусами (400, 401, 403, 404, 405, 409) и возвращает единый формат ошибки.
 * **Пагинация и сортировка:** Нативная реализация через `Pageable` от Spring Data для работы с большими массивами данных.
@@ -89,6 +89,38 @@ curl -X POST http://localhost:8080/api/v1/projects/1/expenses \
 4. Скопируйте JWT токен из тела ответа (`"token": "eyJhb..."`).
 5. Нажмите зеленую кнопку **"Authorize"** в верхней части страницы Swagger и вставьте токен.
 6. Теперь у вас есть доступ к защищенным эндпоинтам (Примечание: создание проектов и добавление участников требует `ROLE_ADMIN`; сотрудники видят только проекты, в которые их добавили).
+
+## 🔌 Обзор API
+
+Все пути начинаются с `/api/v1`. «Участники» - это админ проекта и сотрудники, которых он добавил.
+
+| Метод и путь | Кто может вызвать |
+|---|---|
+| `POST /auth/register` | любой (всегда создает `ROLE_EMPLOYEE`) |
+| `POST /auth/login` | любой |
+| `POST /projects` | любой `ROLE_ADMIN` (становится админом проекта) |
+| `GET /projects/{id}` | участники проекта |
+| `POST /projects/{id}/members` | админ проекта |
+| `GET`, `POST /projects/{id}/tasks` | участники проекта |
+| `GET /projects/{id}/expenses?status=` | участники проекта |
+| `POST /projects/{id}/expenses` (`Idempotency-Key`) | участники проекта |
+| `POST /projects/{id}/expenses/{expenseId}/status` | админ проекта: согласовать, отклонить, оплатить; автор: отменить |
+| `GET /projects/{id}/expenses/{expenseId}/history` | участники проекта |
+| `GET /projects/{id}/expenses/total` | участники проекта |
+| `GET /projects/{id}/expenses/analytics/by-status` | участники проекта |
+| `GET /projects/{id}/expenses/analytics/by-employee` | админ проекта |
+
+`GET /actuator/health` (вне `/api/v1`) публичный и используется healthcheck-ом Docker.
+
+## ⚙️ Конфигурация
+
+| Переменная | Обязательна | Назначение |
+|---|---|---|
+| `DB_USER`, `DB_PASSWORD` | да | логин и пароль PostgreSQL |
+| `JWT_SECRET` | да | ключ подписи в Base64, минимум 256 бит (`openssl rand -base64 48`); со слабым ключом приложение не стартует |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | нет | первый админ, создается при старте, если его еще нет |
+| `JWT_EXPIRATION` | нет | срок жизни токена в мс (по умолчанию 24 ч) |
+| `JPA_SHOW_SQL` | нет | `true` выводит SQL в лог (по умолчанию `false`) |
 
 ## 🧪 Тестирование
 В проекте два уровня тестов:

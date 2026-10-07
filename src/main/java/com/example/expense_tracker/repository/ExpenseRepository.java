@@ -7,7 +7,6 @@ import com.example.expense_tracker.entity.Expense;
 import com.example.expense_tracker.entity.enums.ExpenseStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,7 +19,7 @@ import java.util.Optional;
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    @EntityGraph(attributePaths = {"project", "employee"})
+    // Без @EntityGraph: ExpenseDto использует только id проекта и сотрудника (см. QueryCountIntegrationTest)
     Page<Expense> findAllByProjectId(Long projectId, Pageable pageable);
 
     Page<Expense> findAllByProjectIdAndStatus(Long projectId, ExpenseStatus status, Pageable pageable);
