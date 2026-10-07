@@ -23,9 +23,10 @@ public class TaskController {
     @GetMapping
     public ResponseEntity<Page<TaskDto>> getTasksByProject(
             @PathVariable Long projectId,
-            Pageable pageable) {
+            Pageable pageable,
+            Principal principal) {
 
-        Page<TaskDto> tasks = taskService.getTasksByProjectId(projectId, pageable);
+        Page<TaskDto> tasks = taskService.getTasksByProjectId(projectId, pageable, principal.getName());
         return ResponseEntity.ok(tasks);
     }
 

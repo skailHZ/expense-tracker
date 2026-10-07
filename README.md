@@ -28,8 +28,8 @@ An Enterprise-level B2B REST API service designed for managing corporate project
 * **Layered Architecture:** Strict separation of concerns (Controller -> Service -> Repository).
 * **DTO Pattern:** Entities are never exposed to the client. MapStruct is used for fast, compile-time object mapping.
 * **N+1 Problem Solved:** Configured `@EntityGraph` in JPA repositories to fetch lazy associations efficiently.
-* **Robust Security:** Custom `OncePerRequestFilter` for JWT validation. The author identity is securely extracted from the `SecurityContext`, preventing broken object level authorization (BOLA).
-* **Global Exception Handling:** Custom `@RestControllerAdvice` to intercept exceptions and return standardized API error responses (e.g., 404, 400).
+* **Robust Security:** Custom `OncePerRequestFilter` for JWT validation. Role-based access (`@PreAuthorize`) is combined with object-level checks: a project is accessible only to its admin and to members the admin added (`ProjectAccessService`), which prevents broken object level authorization (BOLA).
+* **Global Exception Handling:** Custom `@RestControllerAdvice` maps exceptions to proper HTTP statuses (400, 401, 403, 404, 405, 409) and returns a standardized error body.
 * **Pagination & Sorting:** Built-in Spring Data `Pageable` implementation for large datasets.
 * **Industrial Logging:** Configured `Logback` with daily rolling file appenders and strict log patterns.
 
@@ -58,11 +58,11 @@ Once the application is running, the interactive API documentation is automatica
 
 ### Quick Start Guide for Testing via Swagger:
 1. Navigate to the `auth-controller` section.
-2. If you are a new user, use `POST /api/v1/auth/register` to create an account (e.g., set role to `ROLE_ADMIN`).
+2. If you are a new user, use `POST /api/v1/auth/register` to create an account. Self-registration always creates `ROLE_EMPLOYEE`; the first admin is created at startup from the `ADMIN_USERNAME` / `ADMIN_PASSWORD` environment variables.
 3. If you already have an account, use `POST /api/v1/auth/login` to authenticate.
 4. Copy the JWT token from the response body (`"token": "eyJhb..."`).
 5. Click the green **"Authorize"** button at the top of the Swagger page and paste the token.
-6. You now have access to protected endpoints (Note: creating projects requires `ROLE_ADMIN`).
+6. You now have access to protected endpoints (Note: creating projects and adding members requires `ROLE_ADMIN`; employees see only projects they were added to).
 
 ## 🧪 Testing
 Unit tests are written using JUnit 5 and Mockito, isolating the business logic from the Spring Context.

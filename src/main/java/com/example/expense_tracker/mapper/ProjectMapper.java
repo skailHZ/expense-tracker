@@ -17,5 +17,6 @@ public interface ProjectMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "admin", ignore = true)
+    @Mapping(target = "members", ignore = true)
     Project toEntity(ProjectCreateDto dto);
 }

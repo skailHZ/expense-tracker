@@ -10,6 +10,7 @@ import com.example.expense_tracker.mapper.ExpenseMapper;
 import com.example.expense_tracker.repository.ExpenseRepository;
 import com.example.expense_tracker.repository.ProjectRepository;
 import com.example.expense_tracker.repository.UserRepository;
+import com.example.expense_tracker.security.ProjectAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,18 +27,19 @@ public class ExpenseService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ExpenseMapper expenseMapper;
+    private final ProjectAccessService accessService;
 
     @Transactional(readOnly = true)
-    public Page<ExpenseDto> getExpensesByProjectId(Long projectId, Pageable pageable) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found: " + projectId);
-        }
+    public Page<ExpenseDto> getExpensesByProjectId(Long projectId, Pageable pageable, String username) {
+        accessService.checkAccess(projectId, username);
         return expenseRepository.findAllByProjectId(projectId, pageable)
                 .map(expenseMapper::toDto);
     }
 
     @Transactional
     public ExpenseDto createExpense(Long projectId, ExpenseCreateDto dto, String username) {
+        accessService.checkAccess(projectId, username);
+
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
 
@@ -53,10 +55,8 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal calculateTotalProjectExpenses(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found: " + projectId);
-        }
+    public BigDecimal calculateTotalProjectExpenses(Long projectId, String username) {
+        accessService.checkAccess(projectId, username);
         // Если расходов еще нет, SUM() вернет null. Обрабатываем это и возвращаем 0.00
         return expenseRepository.calculateTotalAmountByProjectId(projectId)
                 .orElse(BigDecimal.ZERO);

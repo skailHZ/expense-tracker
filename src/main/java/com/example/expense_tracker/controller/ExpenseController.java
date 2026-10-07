@@ -25,8 +25,9 @@ public class ExpenseController {
     @GetMapping
     public ResponseEntity<Page<ExpenseDto>> getExpensesByProject(
             @PathVariable Long projectId,
-            Pageable pageable) {
-        return ResponseEntity.ok(expenseService.getExpensesByProjectId(projectId, pageable));
+            Pageable pageable,
+            Principal principal) {
+        return ResponseEntity.ok(expenseService.getExpensesByProjectId(projectId, pageable, principal.getName()));
     }
 
     @PostMapping
@@ -41,8 +42,10 @@ public class ExpenseController {
 
     // Аналитический эндпоинт
     @GetMapping("/total")
-    public ResponseEntity<Map<String, BigDecimal>> getTotalExpenses(@PathVariable Long projectId) {
-        BigDecimal total = expenseService.calculateTotalProjectExpenses(projectId);
+    public ResponseEntity<Map<String, BigDecimal>> getTotalExpenses(
+            @PathVariable Long projectId,
+            Principal principal) {
+        BigDecimal total = expenseService.calculateTotalProjectExpenses(projectId, principal.getName());
         // Оборачиваем число в Map, чтобы клиент получил валидный JSON: {"totalAmount": 150.50}
         return ResponseEntity.ok(Map.of("totalAmount", total));
     }

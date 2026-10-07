@@ -10,6 +10,7 @@ import com.example.expense_tracker.mapper.TaskMapper;
 import com.example.expense_tracker.repository.ProjectRepository;
 import com.example.expense_tracker.repository.TaskRepository;
 import com.example.expense_tracker.repository.UserRepository;
+import com.example.expense_tracker.security.ProjectAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,18 +25,19 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
+    private final ProjectAccessService accessService;
 
     @Transactional(readOnly = true)
-    public Page<TaskDto> getTasksByProjectId(Long projectId, Pageable pageable) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found: " + projectId);
-        }
+    public Page<TaskDto> getTasksByProjectId(Long projectId, Pageable pageable, String username) {
+        accessService.checkAccess(projectId, username);
         return taskRepository.findAllByProjectId(projectId, pageable)
                 .map(taskMapper::toDto);
     }
 
     @Transactional
     public TaskDto createTask(Long projectId, TaskCreateDto dto, String username) {
+        accessService.checkAccess(projectId, username);
+
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
 

@@ -45,3 +45,11 @@ CREATE INDEX idx_expenses_employee_id ON expenses(employee_id);
 
 -- changeset admin:5
 INSERT INTO users (username, password, role) VALUES ('ceo_boss', 'secret123', 'ROLE_ADMIN');
+
+-- changeset admin:6
+CREATE TABLE project_members (
+                                 project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                                 user_id BIGINT NOT NULL REFERENCES users(id),
+                                 PRIMARY KEY (project_id, user_id)
+);
+CREATE INDEX idx_project_members_user_id ON project_members(user_id);

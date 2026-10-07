@@ -4,6 +4,8 @@ import com.example.expense_tracker.dto.AuthenticationRequest;
 import com.example.expense_tracker.dto.AuthenticationResponse;
 import com.example.expense_tracker.dto.RegisterRequest;
 import com.example.expense_tracker.entity.User;
+import com.example.expense_tracker.entity.enums.Role;
+import com.example.expense_tracker.exception.ConflictException;
 import com.example.expense_tracker.repository.UserRepository;
 import com.example.expense_tracker.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +27,13 @@ public class AuthService {
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new IllegalArgumentException("Username already exists"); // Позже обернем в GlobalExceptionHandler
+            throw new ConflictException("Username already exists");
         }
 
         User user = new User();
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password())); // Защита пароля
-        user.setRole(request.role());
+        user.setRole(Role.ROLE_EMPLOYEE); // Админа нельзя создать через открытый эндпоинт
 
         userRepository.save(user);
 

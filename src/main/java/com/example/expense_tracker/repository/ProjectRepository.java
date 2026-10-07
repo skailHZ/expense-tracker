@@ -6,5 +6,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
-    // Базовых CRUD методов из JpaRepository (save, findById, deleteById) пока достаточно
+
+    // SELECT EXISTS по проекту и его админу - без загрузки сущностей
+    boolean existsByIdAndAdminId(Long id, Long adminId);
+
+    // Проверка членства через таблицу project_members (поле members.id)
+    boolean existsByIdAndMembersId(Long id, Long userId);
 }

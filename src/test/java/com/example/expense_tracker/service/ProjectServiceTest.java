@@ -8,11 +8,13 @@ import com.example.expense_tracker.exception.ResourceNotFoundException;
 import com.example.expense_tracker.mapper.ProjectMapper;
 import com.example.expense_tracker.repository.ProjectRepository;
 import com.example.expense_tracker.repository.UserRepository;
+import com.example.expense_tracker.security.ProjectAccessService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -32,6 +34,8 @@ class ProjectServiceTest {
     private UserRepository userRepository;
     @Mock
     private ProjectMapper projectMapper;
+    @Mock
+    private ProjectAccessService accessService;
 
     // @InjectMocks создает реальный объект сервиса и внедряет в него наши моки
     @InjectMocks
@@ -94,5 +98,40 @@ class ProjectServiceTest {
 
         // Гарантируем, что если юзер не найден, сохранение в БД даже не попытается выполниться
         verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    void getProjectById_ChecksAccessBeforeLoading() {
+        doThrow(new AccessDeniedException("No access")).when(accessService).checkAccess(5L, "stranger");
+
+        assertThrows(AccessDeniedException.class, () -> projectService.getProjectById(5L, "stranger"));
+
+        // Чужой проект не должен даже читаться из БД
+        verify(projectRepository, never()).findById(any());
+    }
+
+    @Test
+    void addMember_AddsUserToProjectMembers() {
+        Project project = new Project();
+        User employee = new User();
+        employee.setUsername("bob");
+
+        when(projectRepository.findById(5L)).thenReturn(Optional.of(project));
+        when(userRepository.findByUsername("bob")).thenReturn(Optional.of(employee));
+
+        projectService.addMember(5L, "bob", "boss");
+
+        verify(accessService).checkProjectAdmin(5L, "boss");
+        assertTrue(project.getMembers().contains(employee));
+    }
+
+    @Test
+    void addMember_DeniedForNonProjectAdmin() {
+        doThrow(new AccessDeniedException("Only the project admin can do this"))
+                .when(accessService).checkProjectAdmin(5L, "mallory");
+
+        assertThrows(AccessDeniedException.class, () -> projectService.addMember(5L, "bob", "mallory"));
+
+        verify(projectRepository, never()).findById(any());
     }
 }

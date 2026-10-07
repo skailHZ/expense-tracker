@@ -1,38 +1,74 @@
-### 1. Регистрация нового админа (Пароль будет захэширован)
-POST http://localhost:8080/api/v1/auth/register
-Content-Type: application/json
+### Перед запуском задайте переменные окружения админа (он создается при старте приложения):
+###   ADMIN_USERNAME=boss  ADMIN_PASSWORD=<ваш пароль>
+### Админа через /register создать нельзя - регистрация всегда создает ROLE_EMPLOYEE.
 
-{
-  "username": "tech_lead",
-  "password": "strongPassword123",
-  "role": "ROLE_ADMIN"
-}
-
-> {%
-    // Сохраняем токен в переменную окружения IDE для следующих запросов
-    client.global.set("auth_token", response.body.token);
-%}
-
-### 2. Логин
+### 1. Логин админа
 POST http://localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "tech_lead",
+  "username": "boss",
+  "password": "<ADMIN_PASSWORD>"
+}
+
+> {%
+    client.global.set("admin_token", response.body.token);
+%}
+
+### 2. Регистрация сотрудника (роль назначается сервером)
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "employee_1",
   "password": "strongPassword123"
 }
 
 > {%
-    client.global.set("auth_token", response.body.token);
+    client.global.set("employee_token", response.body.token);
 %}
 
-### 3. Создание проекта с использованием JWT
+### 3. Админ создает проект (владельцем становится автор токена)
 POST http://localhost:8080/api/v1/projects
 Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+Authorization: Bearer {{admin_token}}
 
 {
   "name": "Secure JWT Project",
-  "description": "Проект защищен секьюрити",
-  "adminId": 2
+  "description": "Проект защищен секьюрити"
 }
+
+> {%
+    client.global.set("project_id", response.body.id);
+%}
+
+### 4. Сотрудник пытается открыть проект до выдачи доступа -> 403
+GET http://localhost:8080/api/v1/projects/{{project_id}}
+Authorization: Bearer {{employee_token}}
+
+### 5. Админ проекта добавляет сотрудника в участники -> 204
+POST http://localhost:8080/api/v1/projects/{{project_id}}/members
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "username": "employee_1"
+}
+
+### 6. Теперь сотрудник видит проект -> 200
+GET http://localhost:8080/api/v1/projects/{{project_id}}
+Authorization: Bearer {{employee_token}}
+
+### 7. Сотрудник добавляет расход в свой проект -> 201
+POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses
+Content-Type: application/json
+Authorization: Bearer {{employee_token}}
+
+{
+  "amount": 150.50,
+  "description": "Такси до клиента"
+}
+
+### 8. Сумма расходов по проекту
+GET http://localhost:8080/api/v1/projects/{{project_id}}/expenses/total
+Authorization: Bearer {{admin_token}}
