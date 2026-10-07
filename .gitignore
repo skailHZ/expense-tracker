@@ -26,3 +26,9 @@ replay_pid*
 # Secrets and local environment
 .env
 logs/
+
+# Build output and IDE files
+target/
+.idea/
+*.iml
+.vscode/
