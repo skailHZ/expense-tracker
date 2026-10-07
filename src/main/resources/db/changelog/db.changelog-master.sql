@@ -53,3 +53,14 @@ CREATE TABLE project_members (
                                  PRIMARY KEY (project_id, user_id)
 );
 CREATE INDEX idx_project_members_user_id ON project_members(user_id);
+
+
+-- changeset admin:7
+-- Удаляем тестового админа из changeset 5: его пароль хранился в открытом виде.
+-- Сам changeset 5 не редактируем: Liquibase хранит его checksum, и правка сломала бы уже развернутые базы.
+DELETE FROM users u
+WHERE u.username = 'ceo_boss'
+  AND NOT EXISTS (SELECT 1 FROM projects WHERE admin_id = u.id)
+  AND NOT EXISTS (SELECT 1 FROM tasks WHERE employee_id = u.id)
+  AND NOT EXISTS (SELECT 1 FROM expenses WHERE employee_id = u.id)
+  AND NOT EXISTS (SELECT 1 FROM project_members WHERE user_id = u.id);

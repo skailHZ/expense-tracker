@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -15,12 +16,18 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // Секретный ключ должен быть длинным (минимум 256 бит для HS256) и храниться в application.yml
+    // Секретный ключ: Base64, минимум 256 бит для HS256. Приходит из переменной окружения JWT_SECRET, в коде и git его нет
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
+
+    // Fail-fast: если ключ не Base64 или короче 256 бит, приложение упадет на старте, а не на первом логине
+    @PostConstruct
+    void validateSecretKey() {
+        getSignInKey();
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

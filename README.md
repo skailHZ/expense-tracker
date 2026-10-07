@@ -43,12 +43,19 @@ The application is fully containerized. You do not need Java or PostgreSQL insta
    cd expense-tracker
    ```
 
-2. Start the cluster using Docker Compose:
+2. Create the `.env` file with your own secrets (it is git-ignored; nothing secret is stored in the repository):
+   ```bash
+   cp .env.example .env
+   # set DB_PASSWORD, ADMIN_PASSWORD and generate JWT_SECRET:
+   openssl rand -base64 48
+   ```
+
+3. Start the cluster using Docker Compose:
    ```bash
    docker-compose up -d --build
    ```
 
-3. The API will be available at `http://localhost:8080`.
+4. The API will be available at `http://localhost:8080`.
 
 ## 📚 API Documentation (Swagger)
 

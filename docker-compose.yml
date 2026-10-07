@@ -3,11 +3,13 @@ services:
     image: postgres:15
     container_name: tracker-postgres
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
+      # ${VAR:?msg} - compose откажется стартовать, если переменная не задана в .env
+      POSTGRES_USER: ${DB_USER:?Set DB_USER in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       POSTGRES_DB: tracker_db
     ports:
-      - "5432:5432"
+      # Только localhost: база не должна быть доступна из сети
+      - "127.0.0.1:5432:5432"
     restart: unless-stopped
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -20,6 +22,11 @@ services:
     environment:
       # Важно: стучимся к базе по имени контейнера "postgres"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tracker_db
+      DB_USER: ${DB_USER:?Set DB_USER in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     depends_on:
       - postgres
     restart: unless-stopped

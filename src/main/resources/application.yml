@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/tracker_db
-    username: admin
-    password: password
+    username: ${DB_USER}      # без значения по умолчанию: приложение не стартует, пока переменная не задана
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,8 +20,8 @@ spring:
 application:
   security:
     jwt:
-      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      expiration: 86400000
+      secret-key: ${JWT_SECRET}  # Base64, минимум 256 бит. Сгенерировать: openssl rand -base64 48
+      expiration: ${JWT_EXPIRATION:86400000}
   bootstrap-admin:
     username: ${ADMIN_USERNAME:}
     password: ${ADMIN_PASSWORD:}

@@ -43,12 +43,19 @@
    cd expense-tracker
    ```
 
-2. Запустите кластер через Docker Compose:
+2. Создайте файл `.env` со своими секретами (он в `.gitignore`, в репозитории секретов нет):
+   ```bash
+   cp .env.example .env
+   # задайте DB_PASSWORD, ADMIN_PASSWORD и сгенерируйте JWT_SECRET:
+   openssl rand -base64 48
+   ```
+
+3. Запустите кластер через Docker Compose:
    ```bash
    docker-compose up -d --build
    ```
 
-3. API будет доступно по адресу `http://localhost:8080`.
+4. API будет доступно по адресу `http://localhost:8080`.
 
 ## 📚 Документация API (Swagger)
 
