@@ -14,8 +14,11 @@ public interface ExpenseMapper {
     @Mapping(source = "employee.id", target = "employeeId")
     ExpenseDto toDto(Expense expense);
 
+    // status и version клиент задавать не может: статус стартует с PENDING, версией управляет Hibernate
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "project", ignore = true)
     @Mapping(target = "employee", ignore = true)
     Expense toEntity(ExpenseCreateDto dto);

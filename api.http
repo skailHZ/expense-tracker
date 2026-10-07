@@ -59,16 +59,88 @@ Authorization: Bearer {{admin_token}}
 GET http://localhost:8080/api/v1/projects/{{project_id}}
 Authorization: Bearer {{employee_token}}
 
-### 7. Сотрудник добавляет расход в свой проект -> 201
+### 7. Сотрудник создает расход. Idempotency-Key защищает от дублей при повторной отправке -> 201
+### Повторите этот же запрос с тем же ключом: вернется тот же расход + заголовок Idempotent-Replayed: true
 POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses
+Content-Type: application/json
+Authorization: Bearer {{employee_token}}
+Idempotency-Key: 6f1c1d8e-3d52-4d0e-9b1a-0a1b2c3d4e5f
+
+{
+  "amount": 150.50,
+  "currency": "RUB",
+  "description": "Такси до клиента"
+}
+
+> {%
+    client.global.set("expense_id", response.body.id);
+%}
+
+### 8. Тот же ключ, но другая сумма -> 422
+POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses
+Content-Type: application/json
+Authorization: Bearer {{employee_token}}
+Idempotency-Key: 6f1c1d8e-3d52-4d0e-9b1a-0a1b2c3d4e5f
+
+{
+  "amount": 999.00,
+  "currency": "RUB",
+  "description": "Такси до клиента"
+}
+
+### 9. Сотрудник не может согласовать расход -> 403
+POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses/{{expense_id}}/status
 Content-Type: application/json
 Authorization: Bearer {{employee_token}}
 
 {
-  "amount": 150.50,
-  "description": "Такси до клиента"
+  "status": "APPROVED"
 }
 
-### 8. Сумма расходов по проекту
+### 10. Админ проекта согласовывает расход (PENDING -> APPROVED) -> 200
+POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses/{{expense_id}}/status
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "APPROVED",
+  "comment": "Чек приложен"
+}
+
+### 11. Оплата (APPROVED -> PAID) -> 200
+POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses/{{expense_id}}/status
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "PAID"
+}
+
+### 12. Из конечного статуса PAID выхода нет -> 409
+POST http://localhost:8080/api/v1/projects/{{project_id}}/expenses/{{expense_id}}/status
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "REJECTED"
+}
+
+### 13. История изменений статуса (аудит)
+GET http://localhost:8080/api/v1/projects/{{project_id}}/expenses/{{expense_id}}/history
+Authorization: Bearer {{admin_token}}
+
+### 14. Список расходов с фильтром по статусу
+GET http://localhost:8080/api/v1/projects/{{project_id}}/expenses?status=PAID
+Authorization: Bearer {{admin_token}}
+
+### 15. Затраты по валютам (без отклоненных и отмененных)
 GET http://localhost:8080/api/v1/projects/{{project_id}}/expenses/total
+Authorization: Bearer {{admin_token}}
+
+### 16. Сводка по статусам
+GET http://localhost:8080/api/v1/projects/{{project_id}}/expenses/analytics/by-status
+Authorization: Bearer {{admin_token}}
+
+### 17. Аналитика по сотрудникам (только админ проекта), фильтр: ?status=APPROVED&status=PAID
+GET http://localhost:8080/api/v1/projects/{{project_id}}/expenses/analytics/by-employee
 Authorization: Bearer {{admin_token}}

@@ -2,6 +2,7 @@ package com.example.expense_tracker.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -28,6 +29,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
         log.warn("Conflict: {}", ex.getMessage());
         return build(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // Два запроса одновременно изменили один и тот же расход: сработала @Version, проигравший должен повторить
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex) {
+        log.warn("Concurrent modification: {}", ex.getMessage());
+        return build(HttpStatus.CONFLICT, "The resource was modified concurrently, reload it and retry");
+    }
+
+    // Тот же Idempotency-Key, но другое тело запроса: это ошибка клиента, а не повтор
+    @ExceptionHandler(IdempotencyKeyReuseException.class)
+    public ResponseEntity<ErrorResponse> handleIdempotencyKeyReuse(IdempotencyKeyReuseException ex) {
+        log.warn("Idempotency key reuse: {}", ex.getMessage());
+        return build(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage());
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
+        log.warn("Bad request: {}", ex.getMessage());
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     // Гонка двух одновременных регистраций: проверка existsByUsername пройдена обеими, а UNIQUE в БД - нет

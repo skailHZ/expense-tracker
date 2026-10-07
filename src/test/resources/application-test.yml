@@ -1,0 +1,17 @@
+# Профиль для интеграционных тестов. Все значения здесь тестовые и нигде кроме тестов не используются.
+spring:
+  datasource:
+    # Реальные url/логин/пароль подставляет Testcontainers (@ServiceConnection).
+    # Заглушки нужны только потому, что в основном application.yml стоят плейсхолдеры без значений.
+    username: test
+    password: test
+  jpa:
+    show-sql: false
+
+application:
+  security:
+    jwt:
+      secret-key: dGVzdC1vbmx5LWp3dC1zZWNyZXQta2V5LW5vdC1mb3ItcHJvZHVjdGlvbi11c2UhIQ==
+  bootstrap-admin:
+    username: it-admin
+    password: it-admin-pass
